@@ -1,18 +1,43 @@
-data/raw
-.env
-__pycache__/
+# ========================
+# OS / Editor junk
+# ========================
 .DS_Store
-node_modules/
-# Web / Next.js
+*.swp
+*.swo
+*.log
+
+# ========================
+# Python / FastAPI
+# ========================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+api/.venv/
+api/.pytest_cache/
+
+# ========================
+# Node / Next.js
+# ========================
 web/node_modules/
 web/.next/
+web/.turbo/
 
-# API / Python
-api/.venv/
-api/__pycache__/
-
-# Data
-data/raw/
-
-# Env
+# ========================
+# Environment variables
+# ========================
 .env
+
+# ========================
+# Data & ML artifacts
+# ========================
+data/raw/
+data/processed/
+*.pt
+*.onnx
+*.h5
+
+# ========================
+# SQLite / DB
+# ========================
+*.db
