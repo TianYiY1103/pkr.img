@@ -1,5 +1,6 @@
 from __future__ import annotations
 from fastapi import HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 
 import json
 from pathlib import Path
@@ -11,6 +12,17 @@ from api.models import Party, Player, Submission
 from api.utils import generate_party_code
 
 app = FastAPI(title="pkr.img API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 UPLOAD_ROOT = Path(__file__).parent / "uploads"
 
@@ -246,7 +258,7 @@ def end_party(code: str, payload: dict):
                 i += 1
             if c["pnl_cents"] == 0:
                 j += 1
-                
+
         return {
             "code": party.code,
             "ended_at": party.ended_at.isoformat() if party.ended_at else None,
