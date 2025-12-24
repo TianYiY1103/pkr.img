@@ -3,3 +3,16 @@ data/raw
 __pycache__/
 .DS_Store
 node_modules/
+# Web / Next.js
+web/node_modules/
+web/.next/
+
+# API / Python
+api/.venv/
+api/__pycache__/
+
+# Data
+data/raw/
+
+# Env
+.env
