@@ -13,9 +13,14 @@ export default function Home() {
   async function createParty() {
     setError("");
     try {
-      const res = await apiPostJson<{ code: string }>("/party", {
-        host_name: hostName,
-      });
+      const res = await apiPostJson<{ code: string; host_token?: string }>(
+        "/party",
+        { host_name: hostName }
+      );
+
+      // if backend returns host_token, store it
+      if (res.host_token) localStorage.setItem("host_token", res.host_token);
+
       router.push(`/party/${res.code}/host`);
     } catch (e: any) {
       setError(String(e?.message ?? e));
@@ -26,7 +31,6 @@ export default function Home() {
     <main className="p-8 max-w-xl mx-auto space-y-6">
       <h1 className="text-3xl font-bold">pkr.img</h1>
 
-      {/* 🔎 API Connectivity Test */}
       <button
         className="border p-2 rounded"
         onClick={async () => {
@@ -49,10 +53,7 @@ export default function Home() {
           value={hostName}
           onChange={(e) => setHostName(e.target.value)}
         />
-        <button
-          className="bg-black text-white p-2 w-full"
-          onClick={createParty}
-        >
+        <button className="bg-black text-white p-2 w-full" onClick={createParty}>
           Create Party
         </button>
       </div>

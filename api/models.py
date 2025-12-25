@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 from datetime import datetime, timezone
 from sqlalchemy import String, Integer, DateTime, ForeignKey, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -14,13 +13,25 @@ def utcnow() -> datetime:
 class Party(Base):
     __tablename__ = "parties"
 
-    code: Mapped[str] = mapped_column(String(12), primary_key=True)  # e.g. "K7P4Q"
+    code: Mapped[str] = mapped_column(String(12), primary_key=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
+    host_token: Mapped[str] = mapped_column(String(128), nullable=False)
+    host_player_id: Mapped[int | None] = mapped_column(ForeignKey("players.id"), nullable=True)
+
     players: Mapped[list["Player"]] = relationship(
-        back_populates="party", cascade="all, delete-orphan"
+        "Player",
+        back_populates="party",
+        cascade="all, delete-orphan",
+        foreign_keys="Player.party_code",
     )
+
+    host_player: Mapped["Player | None"] = relationship(
+        "Player",
+        foreign_keys=[host_player_id],
+    )
+
     submissions: Mapped[list["Submission"]] = relationship(
         back_populates="party", cascade="all, delete-orphan"
     )
@@ -35,7 +46,12 @@ class Player(Base):
     venmo: Mapped[str | None] = mapped_column(String(64), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
-    party: Mapped["Party"] = relationship(back_populates="players")
+    party: Mapped["Party"] = relationship(
+    "Party",
+    back_populates="players",
+    foreign_keys=[party_code],
+)
+
     submissions: Mapped[list["Submission"]] = relationship(back_populates="player")
 
 
@@ -48,10 +64,7 @@ class Submission(Base):
 
     image_path: Mapped[str] = mapped_column(String(255))
     total_cents: Mapped[int] = mapped_column(Integer, default=0)
-
-    # Store JSON as text for MVP simplicity (we can switch to real JSON later)
     breakdown_json: Mapped[str] = mapped_column(Text, default="{}")
-
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     party: Mapped["Party"] = relationship(back_populates="submissions")

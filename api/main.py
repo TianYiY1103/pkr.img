@@ -10,6 +10,10 @@ from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from api.db import init_db, get_db
 from api.models import Party, Player, Submission
 from api.utils import generate_party_code
+import secrets
+
+def new_host_token() -> str:
+    return secrets.token_urlsafe(24)
 
 app = FastAPI(title="pkr.img API")
 
@@ -43,17 +47,42 @@ def health():
 # -------------------------------
 @app.post("/party")
 def create_party(payload: dict):
+    host_name = str(payload.get("host_name", "")).strip()
+    host_venmo = payload.get("host_venmo")
+
+    if not host_name:
+        raise HTTPException(status_code=400, detail="host_name required")
+
     with get_db() as db:
         while True:
             code = generate_party_code()
             if not db.get(Party, code):
                 break
 
-        party = Party(code=code)
+        party = Party(code=code, host_token=new_host_token())
         db.add(party)
         db.commit()
+        db.refresh(party)
 
-    return {"code": code}
+        host_player = Player(
+            party_code=code,
+            name=host_name,
+            venmo=host_venmo,
+        )
+        db.add(host_player)
+        db.commit()
+        db.refresh(host_player)
+
+        party.host_player_id = host_player.id
+        db.add(party)
+        db.commit()
+        db.refresh(party)
+
+        return {
+            "code": code,
+            "host_token": party.host_token,
+            "host_player_id": host_player.id,
+        }
 
 
 # -------------------------------
@@ -151,13 +180,20 @@ def get_party(code: str):
         if not party:
             raise HTTPException(status_code=404, detail="Party not found")
 
+        def iso(dt):
+            return dt.isoformat() if dt else None
+
         players = []
+        # precompute submitted set (faster + cleaner)
+        submitted_player_ids = {s.player_id for s in party.submissions}
+
         for p in party.players:
             players.append({
                 "id": p.id,
                 "name": p.name,
                 "venmo": p.venmo,
-                "submitted": any(s.player_id == p.id for s in party.submissions),
+                "submitted": p.id in submitted_player_ids,
+                "created_at": iso(p.created_at),
             })
 
         submissions = []
@@ -167,17 +203,18 @@ def get_party(code: str):
                 "player_id": s.player_id,
                 "image_path": s.image_path,
                 "total_cents": s.total_cents,
-                "breakdown": json.loads(s.breakdown_json),
-                "created_at": s.created_at,
+                "breakdown": json.loads(s.breakdown_json or "{}"),
+                "created_at": iso(s.created_at),
             })
 
         return {
             "code": party.code,
-            "created_at": party.created_at,
-            "ended_at": party.ended_at,
+            "created_at": iso(party.created_at),
+            "ended_at": iso(party.ended_at),
             "players": players,
             "submissions": submissions,
         }
+
 
 @app.post("/party/{code}/end")
 def end_party(code: str, payload: dict):
@@ -185,10 +222,17 @@ def end_party(code: str, payload: dict):
     if buy_in_cents <= 0:
         raise HTTPException(status_code=400, detail="buy_in_cents must be > 0")
 
+    host_token = str(payload.get("host_token", "")).strip()
+    if not host_token:
+        raise HTTPException(status_code=400, detail="host_token is required")
+
     with get_db() as db:
         party = db.get(Party, code)
         if not party:
             raise HTTPException(status_code=404, detail="Party not found")
+
+        if host_token != party.host_token:
+            raise HTTPException(status_code=403, detail="Host token invalid")
 
         # mark ended
         if party.ended_at is None:
