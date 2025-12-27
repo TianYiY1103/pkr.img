@@ -69,22 +69,22 @@ Join Party → Upload Chips → Party Dashboard → Results
 
 ## 📁 Project Structure
 
-pkr.img/
-├── api/ # FastAPI backend
-│ ├── main.py
-│ ├── models.py
-│ ├── db.py
-│ └── uploads/
-│
-├── web/ # Next.js frontend
-│ └── app/
-│ ├── page.tsx
-│ └── party/
-│ └── [code]/
-│ ├── host/page.tsx
-│ ├── join/page.tsx
-│ ├── upload/page.tsx
-│ └── page.tsx # Party Dashboard
+pkr.img/\\
+├── api/ # FastAPI backend\\
+│ ├── main.py\\
+│ ├── models.py\\
+│ ├── db.py\\
+│ └── uploads/\\
+│\\
+├── web/ # Next.js frontend\\
+│ └── app/\\
+│ ├── page.tsx\\
+│ └── party/\\
+│ └── [code]/\\
+│ ├── host/page.tsx\\
+│ ├── join/page.tsx\\
+│ ├── upload/page.tsx\\
+│ └── page.tsx # Party Dashboard\\
 
 ---
 
@@ -100,16 +100,16 @@ pip install -r requirements.txt
 uvicorn api.main:app --reload
 ```
 ### Frontend
-cd web
-npm install
-npm run dev
-Frontend: http://localhost:3000
-API: http://127.0.0.1:8000
+cd web\\
+npm install\\
+npm run dev\\
+Frontend: http://localhost:3000\\
+API: http://127.0.0.1:8000\\
 
-🧪 Quick Test
-curl http://127.0.0.1:8000/health
-Expected response:
-{ "status": "ok" }
+🧪 Quick Test\\
+curl http://127.0.0.1:8000/health\\
+Expected response:\\
+{ "status": "ok" }\\
 
 🛣️ Roadmap
 
