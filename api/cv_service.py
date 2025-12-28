@@ -269,15 +269,17 @@ class ChipCVService:
         gray_masked = cv2.bitwise_and(gray, gray, mask=stack_mask)
         
         # Detect horizontal edges (seams between stacked chips)
-        # Use Sobel or Canny to find horizontal edges
+        # Use Sobel to find horizontal edges
         sobel_x = cv2.Sobel(gray_masked, cv2.CV_64F, 1, 0, ksize=3)
         sobel_y = cv2.Sobel(gray_masked, cv2.CV_64F, 0, 1, ksize=3)
         
         # Focus on horizontal edges (strong vertical gradients)
-        horizontal_edges = np.abs(sobel_x)
+        # Horizontal seams have vertical gradients, so use sobel_y
+        horizontal_edges = np.abs(sobel_y)
         
         # Project horizontal edges vertically to find seam locations
-        # Sum horizontal edges across each row
+        # Sum horizontal edges across columns (axis=1) to get vertical projection
+        # This gives us edge strength per row, indicating where seams are located vertically
         edge_projection = np.sum(horizontal_edges, axis=1)
         
         # Find peaks in the projection (indicating seams)
