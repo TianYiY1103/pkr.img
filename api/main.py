@@ -10,6 +10,7 @@ from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from api.db import init_db, get_db
 from api.models import Party, Player, Submission
 from api.utils import generate_party_code
+from api.cv_service import process_chip_image
 import secrets
 
 def new_host_token() -> str:
@@ -150,9 +151,17 @@ async def upload_photo(
         contents = await image.read()
         filepath.write_bytes(contents)
 
-        # Placeholder totals for Phase 1
-        total_cents = 0
-        breakdown = {}  # later: {"red": 10, "blue": 4, ...}
+        # Process image with CV service
+        try:
+            cv_result = process_chip_image(str(filepath))
+            total_cents = cv_result.get("total_cents", 0)
+            breakdown = cv_result.get("breakdown", {})
+        except Exception as e:
+            # Fallback to zeros if CV processing fails
+            total_cents = 0
+            breakdown = {}
+            # Log error but don't fail the upload
+            print(f"CV processing error: {e}")
 
         sub = Submission(
             party_code=code,
